@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tc-oficina-billing-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: tc-oficina-billing-service
+  template:
+    metadata:
+      labels:
+        app: tc-oficina-billing-service
+    spec:
+      containers:
+      - name: tc-oficina-billing-service
+        image: tc-oficina-billing-service:latest
+        ports:
+        - containerPort: 8082
+        envFrom:
+        - configMapRef:
+            name: billing-service-config
+        resources:
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+          requests:
+            memory: "256Mi"
+            cpu: "250m"

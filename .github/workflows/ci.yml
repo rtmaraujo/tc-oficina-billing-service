@@ -1,0 +1,46 @@
+name: CI/CD Pipeline - Billing Service
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up JDK 17
+      uses: actions/setup-java@v3
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+    
+    - name: Cache Maven packages
+      uses: actions/cache@v3
+      with:
+        path: ~/.m2
+        key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+        restore-keys: |
+          ${{ runner.os }}-m2
+    
+    - name: Build with Maven
+      run: mvn -B clean package --file pom.xml
+    
+    - name: Run Tests
+      run: mvn -B test --file pom.xml
+    
+    - name: SonarQube Scan
+      run: mvn -B verify jacoco:report --file pom.xml
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+    - name: Deploy to Kubernetes
+      run: |
+        kubectl set image deployment/tc-oficina-billing-service tc-oficina-billing-service=tc-oficina-billing-service:latest --namespace=oficina
+        kubectl rollout status deployment/tc-oficina-billing-service --namespace=oficina
