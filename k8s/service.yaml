@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: tc-oficina-billing-service
+spec:
+  type: ClusterIP
+  selector:
+    app: tc-oficina-billing-service
+  ports:
+    - port: 80
+      target: 8082
