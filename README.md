@@ -51,6 +51,13 @@ curl -X PUT "http://localhost:8082/api/billing/orcamento/1/status?novoStatus=APR
 curl -X PUT "http://localhost:8082/api/billing/orcamento/1/status?novoStatus=PAGO"
 ```
 
+## Documentação da API (Swagger)
+
+Desabilitado no perfil local e habilitado apenas no perfil `k8s`:
+
+- `http://35.84.122.229/billing/swagger-ui.html`
+- OpenAPI: `http://35.84.122.229/billing/v3/api-docs`
+
 ## Status do orçamento
 
 `PENDENTE` → `APROVADO` → `PAGO`

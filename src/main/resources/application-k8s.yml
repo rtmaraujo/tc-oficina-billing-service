@@ -41,3 +41,11 @@ mercadopago:
   webhook-secret: ${MERCADOPAGO_WEBHOOK_SECRET:xxxx}
   notification-url: ${MERCADOPAGO_NOTIFICATION_URL:https://placeholder}
   base-url: https://api.mercadopago.com
+
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+    config-url: /billing/v3/api-docs/swagger-config
+    url: /billing/v3/api-docs
