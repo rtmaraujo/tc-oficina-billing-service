@@ -1,0 +1,51 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: tc-oficina-billing-service
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://billing-db:5432/oficina_billing}
+    username: ${SPRING_DATASOURCE_USERNAME:oficina_user}
+    password: ${SPRING_DATASOURCE_PASSWORD:oficina_pass}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:kafka.oficina-infra.svc.cluster.local:9092}
+    consumer:
+      group-id: billing-service-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+
+mercadopago:
+  access-token: ${MERCADOPAGO_ACCESS_TOKEN:TEST-xxxx}
+  webhook-secret: ${MERCADOPAGO_WEBHOOK_SECRET:xxxx}
+  notification-url: ${MERCADOPAGO_NOTIFICATION_URL:https://placeholder}
+  base-url: https://api.mercadopago.com
+
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+    config-url: /billing/v3/api-docs/swagger-config
+    url: /billing/v3/api-docs

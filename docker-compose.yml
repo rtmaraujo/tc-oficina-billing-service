@@ -1,0 +1,61 @@
+services:
+  postgres-billing:
+    image: postgres:15
+    container_name: postgres-billing
+    environment:
+      POSTGRES_DB: oficina_billing
+      POSTGRES_USER: oficina_user
+      POSTGRES_PASSWORD: oficina_pass
+    ports:
+      - "5434:5432"
+    volumes:
+      - postgres_billing_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U oficina_user -d oficina_billing"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.6.0
+    container_name: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+
+  kafka:
+    image: confluentinc/cp-kafka:7.6.0
+    container_name: kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+
+  billing-service:
+    build: .
+    container_name: tc-oficina-billing-service
+    depends_on:
+      postgres-billing:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    ports:
+      - "8082:8082"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-billing:5432/oficina_billing
+      SPRING_DATASOURCE_USERNAME: oficina_user
+      SPRING_DATASOURCE_PASSWORD: oficina_pass
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      MERCADOPAGO_ACCESS_TOKEN: ${MERCADOPAGO_ACCESS_TOKEN:-TEST-xxxx}
+      MERCADOPAGO_WEBHOOK_SECRET: ${MERCADOPAGO_WEBHOOK_SECRET:-xxxx}
+      MERCADOPAGO_NOTIFICATION_URL: ${MERCADOPAGO_NOTIFICATION_URL:-http://localhost:8082/webhook/mercadopago}
+
+volumes:
+  postgres_billing_data:
