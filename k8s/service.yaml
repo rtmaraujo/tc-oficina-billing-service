@@ -2,10 +2,15 @@ apiVersion: v1
 kind: Service
 metadata:
   name: tc-oficina-billing-service
+  namespace: oficina-billing
+  labels:
+    app: tc-oficina-billing-service
 spec:
   type: ClusterIP
+  ports:
+    - name: http
+      port: 8082
+      targetPort: 8082
+      protocol: TCP
   selector:
     app: tc-oficina-billing-service
-  ports:
-    - port: 80
-      target: 8082

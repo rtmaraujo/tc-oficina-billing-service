@@ -1,0 +1,31 @@
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: billing-service-ingressroute
+  namespace: oficina-billing
+spec:
+  entryPoints:
+    - web
+  routes:
+    - match: Host(`35.84.122.229`) && PathPrefix(`/billing`)
+      kind: Rule
+      services:
+        - name: tc-oficina-billing-service
+          port: 8082
+      middlewares:
+        - name: strip-billing-prefix
+    - match: Host(`35.84.122.229`) && PathPrefix(`/webhook`)
+      kind: Rule
+      services:
+        - name: tc-oficina-billing-service
+          port: 8082
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: strip-billing-prefix
+  namespace: oficina-billing
+spec:
+  stripPrefix:
+    prefixes:
+      - /billing
