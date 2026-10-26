@@ -24,17 +24,32 @@ spring:
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
     producer:
+      acks: all
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      properties:
+        enable.idempotence: true
+        max.in.flight.requests.per.connection: 1
+    template:
+      observation-enabled: true
+    listener:
+      observation-enabled: true
 
 management:
   endpoints:
     web:
       exposure:
-        include: health,metrics,info
+        include: health,metrics,info,prometheus
 
 springdoc:
   api-docs:
     enabled: false
   swagger-ui:
     enabled: false
+
+
+pagamento:
+  provider: ${PAGAMENTO_PROVIDER:mock}
+
+billing:
+  valor-padrao: ${BILLING_VALOR_PADRAO:500.0}

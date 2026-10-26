@@ -9,6 +9,10 @@ public class Orcamento {
     private String dataCriacao;
     private String dataAtualizacao;
     private String pagamentoId; // ID do pagamento no Mercado Pago
+    private String sagaId;
+    private Long osId;
+    private String preferenceId;
+    private String initPoint;
 
     // Getters and Setters
     public Long getId() { return id; }
@@ -27,6 +31,14 @@ public class Orcamento {
     public void setDataAtualizacao(String dataAtualizacao) { this.dataAtualizacao = dataAtualizacao; }
     public String getPagamentoId() { return pagamentoId; }
     public void setPagamentoId(String pagamentoId) { this.pagamentoId = pagamentoId; }
+    public String getSagaId() { return sagaId; }
+    public void setSagaId(String sagaId) { this.sagaId = sagaId; }
+    public Long getOsId() { return osId; }
+    public void setOsId(Long osId) { this.osId = osId; }
+    public String getPreferenceId() { return preferenceId; }
+    public void setPreferenceId(String preferenceId) { this.preferenceId = preferenceId; }
+    public String getInitPoint() { return initPoint; }
+    public void setInitPoint(String initPoint) { this.initPoint = initPoint; }
 
     // Constructors
     public Orcamento() {}

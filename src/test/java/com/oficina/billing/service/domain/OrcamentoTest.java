@@ -50,6 +50,10 @@ class OrcamentoTest {
         orcamento.setDataCriacao("2026-01-01T10:00:00");
         orcamento.setDataAtualizacao("2026-01-02T10:00:00");
         orcamento.setPagamentoId("PAG-123");
+        orcamento.setSagaId("SAGA-OS-1");
+        orcamento.setOsId(1L);
+        orcamento.setPreferenceId("PREF-1");
+        orcamento.setInitPoint("https://checkout");
 
         assertEquals(2L, orcamento.getId());
         assertEquals("ORC-2", orcamento.getCodigoOrcamento());
@@ -59,6 +63,10 @@ class OrcamentoTest {
         assertEquals("2026-01-01T10:00:00", orcamento.getDataCriacao());
         assertEquals("2026-01-02T10:00:00", orcamento.getDataAtualizacao());
         assertEquals("PAG-123", orcamento.getPagamentoId());
+        assertEquals("SAGA-OS-1", orcamento.getSagaId());
+        assertEquals(1L, orcamento.getOsId());
+        assertEquals("PREF-1", orcamento.getPreferenceId());
+        assertEquals("https://checkout", orcamento.getInitPoint());
     }
 
     @Test

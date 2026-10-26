@@ -36,6 +36,18 @@ public class OrcamentoEntity {
     @Column(name = "pagamento_id")
     private String pagamentoId;
 
+    @Column(name = "saga_id")
+    private String sagaId;
+
+    @Column(name = "os_id")
+    private Long osId;
+
+    @Column(name = "preference_id")
+    private String preferenceId;
+
+    @Column(name = "init_point", length = 500)
+    private String initPoint;
+
     // Default constructor
     public OrcamentoEntity() {
         this.dataCriacao = LocalDateTime.now();
@@ -52,6 +64,10 @@ public class OrcamentoEntity {
         this.dataCriacao = LocalDateTime.now();
         this.dataAtualizacao = this.dataCriacao;
         this.pagamentoId = dominio.getPagamentoId();
+        this.sagaId = dominio.getSagaId();
+        this.osId = dominio.getOsId();
+        this.preferenceId = dominio.getPreferenceId();
+        this.initPoint = dominio.getInitPoint();
     }
 
     // Getters and Setters
@@ -71,6 +87,14 @@ public class OrcamentoEntity {
     public void setDataAtualizacao(LocalDateTime dataAtualizacao) { this.dataAtualizacao = dataAtualizacao; }
     public String getPagamentoId() { return pagamentoId; }
     public void setPagamentoId(String pagamentoId) { this.pagamentoId = pagamentoId; }
+    public String getSagaId() { return sagaId; }
+    public void setSagaId(String sagaId) { this.sagaId = sagaId; }
+    public Long getOsId() { return osId; }
+    public void setOsId(Long osId) { this.osId = osId; }
+    public String getPreferenceId() { return preferenceId; }
+    public void setPreferenceId(String preferenceId) { this.preferenceId = preferenceId; }
+    public String getInitPoint() { return initPoint; }
+    public void setInitPoint(String initPoint) { this.initPoint = initPoint; }
 
     // Convert to domain
     public Orcamento toDomain() {
@@ -83,6 +107,10 @@ public class OrcamentoEntity {
         dominio.setDataCriacao(this.dataCriacao.toString());
         dominio.setDataAtualizacao(this.dataAtualizacao.toString());
         dominio.setPagamentoId(this.pagamentoId);
+        dominio.setSagaId(this.sagaId);
+        dominio.setOsId(this.osId);
+        dominio.setPreferenceId(this.preferenceId);
+        dominio.setInitPoint(this.initPoint);
         return dominio;
     }
 }
