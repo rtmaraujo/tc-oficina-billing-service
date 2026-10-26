@@ -6,7 +6,6 @@ import com.oficina.billing.service.application.payment.PaymentGateway;
 import com.oficina.billing.service.application.payment.PaymentResult;
 import com.oficina.billing.service.domain.Orcamento;
 import com.oficina.billing.service.domain.StatusOrcamento;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,11 +15,13 @@ import java.util.List;
 @RequestMapping("/api/billing")
 public class BillingController {
 
-    @Autowired
-    private BillingApplicationService billingService;
+    private final BillingApplicationService billingService;
+    private final PaymentGateway paymentGateway;
 
-    @Autowired
-    private PaymentGateway paymentGateway;
+    public BillingController(BillingApplicationService billingService, PaymentGateway paymentGateway) {
+        this.billingService = billingService;
+        this.paymentGateway = paymentGateway;
+    }
 
     @PostMapping("/orcamento")
     public ResponseEntity<Orcamento> gerarOrcamento(@RequestParam String clienteCpf, @RequestParam double valor) {

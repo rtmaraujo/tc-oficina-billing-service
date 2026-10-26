@@ -14,7 +14,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
 
@@ -34,9 +33,7 @@ class BillingControllerTest {
 
     @BeforeEach
     void setUp() {
-        controller = new BillingController();
-        ReflectionTestUtils.setField(controller, "billingService", billingService);
-        ReflectionTestUtils.setField(controller, "paymentGateway", new MockPaymentGateway());
+        controller = new BillingController(billingService, new MockPaymentGateway());
     }
 
     private Orcamento orcamento() {
@@ -165,9 +162,9 @@ class BillingControllerTest {
         com.oficina.billing.service.application.payment.PaymentGateway real =
             mock(com.oficina.billing.service.application.payment.PaymentGateway.class);
         when(real.isMock()).thenReturn(false);
-        ReflectionTestUtils.setField(controller, "paymentGateway", real);
+        BillingController comProviderReal = new BillingController(billingService, real);
 
-        ResponseEntity<Object> response = controller.simularPagamento(1L, true);
+        ResponseEntity<Object> response = comProviderReal.simularPagamento(1L, true);
 
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         verifyNoInteractions(billingService);
