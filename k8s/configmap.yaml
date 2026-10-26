@@ -10,4 +10,4 @@ data:
   MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: "health,info,metrics,prometheus"
   MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS: "always"
   MERCADOPAGO_BASE_URL: "https://api.mercadopago.com"
-  MERCADOPAGO_NOTIFICATION_URL: "http://35.84.122.229/webhook/mercadopago"
+  MERCADOPAGO_NOTIFICATION_URL: "http://44.253.115.185/webhook/mercadopago"
