@@ -73,13 +73,15 @@ jobs:
       - name: Atualizar imagePullSecret do ECR
         env:
           REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
         run: |
           install -m 700 -d ~/.ssh
-          printf '%s\n' "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/deploy_key
+          printf '%s\n' "$EC2_SSH_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -H "${{ secrets.EC2_HOST }}" >> ~/.ssh/known_hosts
+          ssh-keyscan -H "$EC2_HOST" >> ~/.ssh/known_hosts
           ECR_PASSWORD=$(aws ecr get-login-password --region $AWS_REGION)
-          ssh -i ~/.ssh/deploy_key ubuntu@"${{ secrets.EC2_HOST }}" \
+          ssh -i ~/.ssh/deploy_key ubuntu@"$EC2_HOST" \
             "sudo k3s kubectl create secret docker-registry ecr-registry --docker-server=$REGISTRY --docker-username=AWS --docker-password='$ECR_PASSWORD' -n $K8S_NAMESPACE --dry-run=client -o yaml | sudo k3s kubectl apply -f -"
       - name: Build e push da imagem
         env:

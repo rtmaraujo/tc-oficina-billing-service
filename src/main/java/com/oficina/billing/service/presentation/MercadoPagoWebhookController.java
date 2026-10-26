@@ -49,7 +49,8 @@ public class MercadoPagoWebhookController {
             : json != null && json.has("data") ? json.get("data").path("id").asText(null) : null;
 
         if (dataId == null) {
-            log.warn("Webhook recebido sem data.id: {}", body);
+            log.warn("Webhook recebido sem data.id (corpo com {} caracteres)",
+                body == null ? 0 : body.length());
             return ResponseEntity.ok("ignorado");
         }
 
@@ -82,7 +83,8 @@ public class MercadoPagoWebhookController {
         try {
             return objectMapper.readTree(body);
         } catch (Exception e) {
-            log.warn("Webhook com corpo invalido: {}", body);
+            log.warn("Webhook com corpo invalido ({} caracteres)",
+                body.length());
             return null;
         }
     }
