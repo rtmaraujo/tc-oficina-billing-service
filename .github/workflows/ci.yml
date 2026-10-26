@@ -1,4 +1,4 @@
-name: CI/CD Pipeline - Billing Service
+﻿name: CI/CD Pipeline - Billing Service
 
 on:
   push:
@@ -39,7 +39,7 @@ jobs:
 
       - name: Analise de qualidade (SonarCloud)
         if: ${{ env.SONAR_TOKEN != '' }}
-        run: mvn -B sonar:sonar -Dsonar.token=${{ secrets.SONAR_TOKEN }}
+        run: mvn -B org.sonarsource.scanner.maven:sonar-maven-plugin:5.8.0.7211:sonar -Dsonar.token=${{ secrets.SONAR_TOKEN }}
 
       - name: Publicar relatorio de cobertura
         if: always()
