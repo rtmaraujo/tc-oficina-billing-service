@@ -3,9 +3,12 @@ package com.oficina.billing.service.application.impl;
 import com.oficina.billing.service.domain.Orcamento;
 import com.oficina.billing.service.domain.StatusOrcamento;
 import com.oficina.billing.service.application.BillingApplicationService;
+import com.oficina.billing.service.infrastructure.persistence.OrcamentoEntity;
 import com.oficina.billing.service.infrastructure.repository.OrcamentoRepository;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -23,8 +26,8 @@ public class BillingApplicationServiceImpl implements BillingApplicationService 
     @Override
     public Orcamento gerarOrcamento(String clienteCpf, double valor) {
         Orcamento orcamento = new Orcamento(null, "ORC-" + System.currentTimeMillis(), clienteCpf, valor, StatusOrcamento.PENDENTE);
-        Orcamento saved = repository.save(orcamento);
-        
+        Orcamento saved = repository.save(new OrcamentoEntity(orcamento)).toDomain();
+
         // Publicar evento Kafka: orçamento gerado
         kafkaTemplate.send("budget-generated", saved.getId().toString(),
             "Orcamento{" +
@@ -34,21 +37,22 @@ public class BillingApplicationServiceImpl implements BillingApplicationService 
             ", valor=" + saved.getValor() +
             ", status=" + saved.getStatus() +
             '}');
-        
+
         return saved;
     }
 
     @Override
     public Orcamento atualizarStatus(Long id, StatusOrcamento novoStatus) {
-        Optional<Orcamento> optional = repository.findById(id);
+        Optional<OrcamentoEntity> optional = repository.findById(id);
         if (optional.isPresent()) {
-            Orcamento orcamento = optional.get();
-            orcamento.setStatus(novoStatus);
+            OrcamentoEntity entity = optional.get();
+            entity.setStatus(novoStatus);
+            entity.setDataAtualizacao(LocalDateTime.now());
             if (novoStatus == StatusOrcamento.PAGO) {
-                orcamento.setPagamentoId("PAG-" + System.currentTimeMillis());
+                entity.setPagamentoId("PAG-" + System.currentTimeMillis());
             }
-            Orcamento updated = repository.save(orcamento);
-            
+            Orcamento updated = repository.save(entity).toDomain();
+
             // Publicar evento conforme status
             switch (novoStatus) {
                 case APROVADO:
@@ -66,7 +70,7 @@ public class BillingApplicationServiceImpl implements BillingApplicationService 
                 default:
                     break;
             }
-            
+
             return updated;
         }
         return null;
@@ -74,11 +78,13 @@ public class BillingApplicationServiceImpl implements BillingApplicationService 
 
     @Override
     public Orcamento consultarPorId(Long id) {
-        return repository.findById(id).orElse(null);
+        return repository.findById(id).map(OrcamentoEntity::toDomain).orElse(null);
     }
 
     @Override
     public List<Orcamento> listarPorCliente(String clienteCpf) {
-        return repository.findByClienteCpf(clienteCpf);
+        return repository.findByClienteCpf(clienteCpf).stream()
+            .map(OrcamentoEntity::toDomain)
+            .toList();
     }
 }

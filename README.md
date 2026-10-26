@@ -55,8 +55,8 @@ curl -X PUT "http://localhost:8082/api/billing/orcamento/1/status?novoStatus=PAG
 
 Desabilitado no perfil local e habilitado apenas no perfil `k8s`:
 
-- `http://35.84.122.229/billing/swagger-ui.html`
-- OpenAPI: `http://35.84.122.229/billing/v3/api-docs`
+- `http://44.253.115.185/billing/swagger-ui.html`
+- OpenAPI: `http://44.253.115.185/billing/v3/api-docs`
 
 ## Status do orçamento
 
@@ -160,7 +160,7 @@ kubectl apply -f k8s/deployment.yaml
 kubectl apply -f k8s/ingressroute.yaml
 ```
 
-- Imagem: `097735115452.dkr.ecr.us-west-2.amazonaws.com/tc-oficina-billing-service:latest`
+- Imagem: `200111905660.dkr.ecr.us-west-2.amazonaws.com/tc-oficina-billing-service:latest`
 - 2 réplicas, probes em `/actuator/health/{readiness,liveness}`
 - Rotas Traefik: `/billing/*` e `/webhook/*`
 
