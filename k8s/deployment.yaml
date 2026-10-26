@@ -1,4 +1,4 @@
-apiVersion: apps/v1
+﻿apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: tc-oficina-billing-service
@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: tc-oficina-billing-service
-          image: 097735115452.dkr.ecr.us-west-2.amazonaws.com/tc-oficina-billing-service:latest
+          image: 200111905660.dkr.ecr.us-west-2.amazonaws.com/tc-oficina-billing-service:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 8082
