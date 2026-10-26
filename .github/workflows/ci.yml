@@ -39,7 +39,7 @@ jobs:
 
       - name: Analise de qualidade (SonarCloud)
         if: ${{ env.SONAR_TOKEN != '' }}
-        run: mvn -B org.sonarsource.scanner.maven:sonar-maven-plugin:5.8.0.7211:sonar -Dsonar.token=${{ secrets.SONAR_TOKEN }}
+        run: mvn -B org.sonarsource.scanner.maven:sonar-maven-plugin:5.8.0.7211:sonar -Dsonar.token=${{ secrets.SONAR_TOKEN }} -Dsonar.qualitygate.wait=true
 
       - name: Publicar relatorio de cobertura
         if: always()
@@ -70,6 +70,17 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@03f1aad4c6c7ffd436567f42f9384779290529bd # v2
 
+      - name: Atualizar imagePullSecret do ECR
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H "${{ secrets.EC2_HOST }}" >> ~/.ssh/known_hosts
+          ECR_PASSWORD=$(aws ecr get-login-password --region $AWS_REGION)
+          ssh -i ~/.ssh/deploy_key ubuntu@"${{ secrets.EC2_HOST }}" \
+            "sudo k3s kubectl create secret docker-registry ecr-registry --docker-server=$REGISTRY --docker-username=AWS --docker-password='$ECR_PASSWORD' -n $K8S_NAMESPACE --dry-run=client -o yaml | sudo k3s kubectl apply -f -"
       - name: Build e push da imagem
         env:
           REGISTRY: ${{ steps.login-ecr.outputs.registry }}
