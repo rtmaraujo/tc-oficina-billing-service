@@ -34,6 +34,11 @@ config/         -> Listeners Kafka
 | `GET` | `/api/billing/orcamento/{id}` | Consulta orçamento por ID |
 | `GET` | `/api/billing/cliente/{clienteCpf}` | Lista orçamentos por cliente |
 | `PUT` | `/api/billing/orcamento/{id}/status?novoStatus={status}` | Atualiza o status |
+| `POST` | `/api/billing/orcamento/{id}/checkout` | Cria a preferência de pagamento (mock ou Mercado Pago) |
+| `POST` | `/api/billing/orcamento/{id}/simular-pagamento?aprovado={true\|false}` | Simula o retorno do provedor (somente `PAGAMENTO_PROVIDER=mock`) |
+| `POST` | `/webhook/mercadopago` | Recebe notificações do Mercado Pago |
+
+> No cluster, a API fica sob o prefixo `/billing` e o webhook sob `/webhook`.
 
 ### Exemplos
 
@@ -49,14 +54,37 @@ curl -X PUT "http://localhost:8082/api/billing/orcamento/1/status?novoStatus=APR
 
 # Registrar pagamento
 curl -X PUT "http://localhost:8082/api/billing/orcamento/1/status?novoStatus=PAGO"
+
+# Checkout (mock)
+curl -X POST "http://localhost:8082/api/billing/orcamento/1/checkout"
+
+# Simular pagamento aprovado / recusado
+curl -X POST "http://localhost:8082/api/billing/orcamento/1/simular-pagamento?aprovado=true"
+curl -X POST "http://localhost:8082/api/billing/orcamento/1/simular-pagamento?aprovado=false"
 ```
 
 ## Documentação da API (Swagger)
 
 Desabilitado no perfil local e habilitado apenas no perfil `k8s`:
 
-- `http://44.253.115.185/billing/swagger-ui.html`
+- `http://44.253.115.185/billing/swagger-ui/index.html`
 - OpenAPI: `http://44.253.115.185/billing/v3/api-docs`
+
+## Papel na Saga
+
+O Billing é **participante** da Saga. Ele reage a comandos e publica eventos de resultado:
+
+| Evento | Direção | Quando |
+|---|---|---|
+| `os-created` | Consome | Cria o orçamento automaticamente (`PENDENTE`) |
+| `budget-generated` | Produz | Após criar o orçamento |
+| `budget-approved` | Produz | Status `APROVADO` |
+| `budget-rejected` | Produz | Status `REJEITADO` → compensação no OS |
+| `payment-completed` | Produz | Pagamento confirmado |
+| `payment-failed` | Produz | Pagamento recusado → compensação no OS |
+| `compensate-budget` | Consome | Cancela o orçamento (`CANCELADO`) |
+
+Grupo de consumo: `billing-service-group`. Idempotência via `evento_processado`; falhas esgotadas vão para `budget-*`/`payment-*`/`compensate-budget` **`.DLT`**.
 
 ## Status do orçamento
 
@@ -78,7 +106,11 @@ Tabela `orcamento`:
 | `status` | Enum | `StatusOrcamento` |
 | `data_criacao` | LocalDateTime | preenchida na criação |
 | `data_atualizacao` | LocalDateTime | |
-| `pagamento_id` | String | gerado ao marcar `PAGO` |
+| `pagamento_id` | String | gerado ao confirmar o pagamento |
+| `saga_id` | String | `SAGA-<numeroOS>` |
+| `os_id` | Long | OS de origem |
+| `preference_id` | String | preferência criada no checkout |
+| `init_point` | String | URL de pagamento (sandbox/produção) |
 
 ## Eventos Kafka
 
@@ -92,7 +124,25 @@ Tabela `orcamento`:
 
 ## Integração Mercado Pago
 
-As propriedades `mercadopago.*` (`access-token`, `webhook-secret`, `notification-url`, `base-url`) e as variáveis de ambiente já estão previstas na configuração e nos manifests. **A integração (preferência de pagamento e webhook) ainda não está implementada no código** — consta como pendência no README raiz.
+O pagamento é acessado pela porta `PaymentGateway`, com duas implementações intercambiáveis por configuração:
+
+| `PAGAMENTO_PROVIDER` | Situação |
+|---|---|
+| `mock` (padrão local/demo) | Preferência fictícia (`MOCK-PREF-{id}`) e simulação via `POST /orcamento/{id}/simular-pagamento?aprovado=` |
+| `mercadopago` (sandbox) | **Implementado** — `MercadoPagoPaymentGateway` cria a preferência no Checkout Pro, consulta o pagamento e valida a assinatura do webhook |
+
+### Provider real (`mercadopago`)
+
+- `criarCheckout`: `POST /checkout/preferences` com `items`, `external_reference` = id do orçamento, `notification_url` e `back_urls`. Mapeia `id`, `init_point` e `sandbox_init_point`.
+- `consultarPagamento`: `GET /v1/payments/{id}`, traduzindo `status`/`status_detail` e preservando `external_reference`.
+- `validarAssinatura`: HMAC-SHA256 do manifest `id:<data.id>;request-id:<x-request-id>;ts:<ts>;` com o `webhook-secret`, comparado em tempo constante com o `v1` do header `x-signature`. Sem secret configurado, a validação falha fechada (401).
+- Timeouts de 5 s (conexão) e 10 s (leitura); token e secret nunca são registrados em log.
+
+> `auto_return` só é enviado quando `mercadopago.back-url` usa `https://` — o Mercado Pago rejeita `auto_return` com `back_urls` http (`invalid_auto_return`). `back_urls` e `notification_url` em http são aceitos.
+
+### Webhook
+
+`POST /webhook/mercadopago` valida a assinatura, ignora notificações de tipo diferente de `payment` (ex.: `merchant_order`) e só processa pagamentos em estado final (`approved`, `rejected`, `cancelled`, `refunded`, `charged_back`). Estados intermediários (`pending`, `in_process`, `authorized`) respondem `200 pendente` sem publicar evento, evitando compensar uma OS que ainda pode ser paga. O corpo recebido nunca é logado — apenas o tamanho.
 
 ## Configuração
 
@@ -107,6 +157,9 @@ As propriedades `mercadopago.*` (`access-token`, `webhook-secret`, `notification
 | `MERCADOPAGO_ACCESS_TOKEN` | `TEST-xxxx` | Token do Mercado Pago |
 | `MERCADOPAGO_WEBHOOK_SECRET` | `xxxx` | Segredo do webhook |
 | `MERCADOPAGO_NOTIFICATION_URL` | `http://localhost:8082/webhook/mercadopago` | URL de notificação |
+| `MERCADOPAGO_BACK_URL` | `http://localhost:8082/billing/` | Retorno após o checkout (https habilita `auto_return`) |
+| `MERCADOPAGO_BASE_URL` | `https://api.mercadopago.com` | Base da API |
+| `PAGAMENTO_PROVIDER` | `mock` | `mock` ou `mercadopago` |
 
 ## Como executar localmente
 
@@ -133,8 +186,8 @@ mvn test              # testes unitários
 mvn verify            # testes + jacoco:check (mínimo 85% LINE e BRANCH)
 ```
 
-- Testes unitários: domínio, entidade de persistência e serviço de aplicação.
-- Cobertura atual: **100%** de linhas e branches.
+- Testes unitários: domínio, entidade de persistência, serviço de aplicação, listeners, webhook e provider do Mercado Pago (`MockRestServiceServer`).
+- Cobertura atual: **90 testes**, **99,07%** de linhas e **91,67%** de branches.
 - Relatório: `target/site/jacoco/index.html`.
 
 O build falha se a cobertura ficar abaixo de 85%, via `jacoco-maven-plugin` (`check`).
@@ -174,7 +227,12 @@ kubectl apply -f k8s/ingressroute.yaml
 
 ## Observabilidade
 
-Actuator exposto em `/actuator` (`health`, `info`, `metrics`, `prometheus` no perfil `k8s`).
+- Actuator em `/actuator` (`health`, `info`, `metrics`, `prometheus` no perfil `k8s`).
+- Probes de readiness/liveness em `/actuator/health/readiness` e `/actuator/health/liveness`.
+- Métricas no Prometheus: `http://44.253.115.185/prometheus/`.
+- Dashboard: `http://44.253.115.185/grafana/` → **Oficina Fase 4 - Microsservicos**.
+- Traces distribuídos: `http://44.253.115.185/zipkin/`.
+- O `sagaId` é propagado no MDC e correlaciona os logs com a OS de origem.
 
 ## Estrutura
 

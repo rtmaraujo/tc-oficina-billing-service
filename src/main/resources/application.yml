@@ -48,6 +48,13 @@ springdoc:
     enabled: false
 
 
+mercadopago:
+  access-token: ${MERCADOPAGO_ACCESS_TOKEN:TEST-xxxx}
+  webhook-secret: ${MERCADOPAGO_WEBHOOK_SECRET:xxxx}
+  notification-url: ${MERCADOPAGO_NOTIFICATION_URL:http://localhost:8082/webhook/mercadopago}
+  back-url: ${MERCADOPAGO_BACK_URL:http://localhost:8082/billing/}
+  base-url: ${MERCADOPAGO_BASE_URL:https://api.mercadopago.com}
+
 pagamento:
   provider: ${PAGAMENTO_PROVIDER:mock}
 

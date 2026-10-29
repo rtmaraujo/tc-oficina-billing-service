@@ -151,6 +151,34 @@ class MercadoPagoWebhookControllerTest {
         verify(billingService).processarPagamento(eq(2L), any());
     }
 
+    @Test
+    @DisplayName("Deve ignorar status intermediario sem compensar a OS")
+    void shouldIgnorePendingPayment() {
+        when(gateway.validarAssinatura(eq("123"), any(), any())).thenReturn(true);
+        when(gateway.consultarPagamento("123"))
+            .thenReturn(new com.oficina.billing.service.application.payment.PaymentResult(
+                "123", "pending", false, "1", "pending"));
+
+        ResponseEntity<String> response = controller.receber("assinatura", "req-1",
+            "123", 1L, "{}");
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals("pendente", response.getBody());
+        verify(billingService, never()).processarPagamento(any(), any());
+    }
+
+    @Test
+    @DisplayName("Deve ignorar webhook de tipo diferente de payment")
+    void shouldIgnoreNonPaymentType() {
+        ResponseEntity<String> response = controller.receber(null, null, null, null,
+            "{\"type\":\"merchant_order\",\"data\":{\"id\":\"999\"}}");
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals("ignorado", response.getBody());
+        verifyNoInteractions(billingService);
+        verifyNoInteractions(gateway);
+    }
+
     private Orcamento orcamento() {
         return new Orcamento(1L, "ORC-1", "12345678909", 250.0, StatusOrcamento.PAGO);
     }
