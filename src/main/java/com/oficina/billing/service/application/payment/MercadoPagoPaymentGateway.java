@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.annotation.Primary;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
@@ -31,8 +32,14 @@ import java.util.Map;
  * <p>Ativo quando {@code pagamento.provider=mercadopago}. Cria a preferencia de
  * checkout, consulta o pagamento pelo id e valida a assinatura HMAC-SHA256 dos
  * webhooks. Nenhuma credencial e registrada em log.</p>
+ *
+ * <p>Marcado como {@link Primary} apenas para desambiguar a injecao por tipo:
+ * os dois gateways sao mutuamente exclusivos por {@code pagamento.provider},
+ * mas analisadores estaticos nao avaliam {@code @ConditionalOnProperty}. Se
+ * ambos existissem, o provider real vence — nunca se paga com mock por engano.</p>
  */
 @Component
+@Primary
 @ConditionalOnProperty(name = "pagamento.provider", havingValue = "mercadopago")
 public class MercadoPagoPaymentGateway implements PaymentGateway {
 
