@@ -45,6 +45,12 @@ public class MercadoPagoWebhookController {
             @RequestBody(required = false) String body) {
 
         JsonNode json = ler(body);
+        String tipo = json != null && json.hasNonNull("type") ? json.get("type").asText() : null;
+        if (tipo != null && !"payment".equalsIgnoreCase(tipo)) {
+            log.info("Webhook do Mercado Pago ignorado: tipo {}", tipo);
+            return ResponseEntity.ok("ignorado");
+        }
+
         String dataId = dataIdParam != null ? dataIdParam
             : json != null && json.has("data") ? json.get("data").path("id").asText(null) : null;
 
@@ -60,6 +66,12 @@ public class MercadoPagoWebhookController {
         }
 
         PaymentResult resultado = paymentGateway.consultarPagamento(dataId);
+        if (!resultado.finalizado()) {
+            log.info("Pagamento {} ainda no status {} - aguardando notificacao final",
+                dataId, resultado.status());
+            return ResponseEntity.ok("pendente");
+        }
+
         Long orcamentoId = orcamentoIdParam;
         if (orcamentoId == null && resultado.externalReference() != null) {
             try {

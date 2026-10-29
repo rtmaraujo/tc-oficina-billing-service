@@ -11,6 +11,7 @@ data:
   MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS: "always"
   MERCADOPAGO_BASE_URL: "https://api.mercadopago.com"
   MERCADOPAGO_NOTIFICATION_URL: "http://44.253.115.185/webhook/mercadopago"
-  PAGAMENTO_PROVIDER: "mock"
+  MERCADOPAGO_BACK_URL: "http://44.253.115.185/billing/"
+  PAGAMENTO_PROVIDER: "mercadopago"
   BILLING_VALOR_PADRAO: "500.0"
   ZIPKIN_ENDPOINT: "http://zipkin.monitoring.svc.cluster.local:9411/api/v2/spans"

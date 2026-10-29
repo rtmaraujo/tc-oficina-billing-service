@@ -55,7 +55,8 @@ management:
 mercadopago:
   access-token: ${MERCADOPAGO_ACCESS_TOKEN:TEST-xxxx}
   webhook-secret: ${MERCADOPAGO_WEBHOOK_SECRET:xxxx}
-  notification-url: ${MERCADOPAGO_NOTIFICATION_URL:https://placeholder}
+  notification-url: ${MERCADOPAGO_NOTIFICATION_URL:http://44.253.115.185/webhook/mercadopago}
+  back-url: ${MERCADOPAGO_BACK_URL:http://44.253.115.185/billing/}
   base-url: https://api.mercadopago.com
 
 logging:
