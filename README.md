@@ -6,6 +6,7 @@ Microsserviço de **orçamento e pagamento** da Oficina Mecânica. Gera orçamen
 - **Banco:** PostgreSQL (`oficina_billing`)
 - **Namespace Kubernetes:** `oficina-billing`
 - **Repositório:** https://github.com/rtmaraujo/tc-oficina-billing-service
+- **Documentação da entrega:** https://github.com/rtmaraujo/tc-oficina-docs
 
 ## Stack
 
@@ -34,8 +35,8 @@ config/         -> Listeners Kafka
 | `GET` | `/api/billing/orcamento/{id}` | Consulta orçamento por ID |
 | `GET` | `/api/billing/cliente/{clienteCpf}` | Lista orçamentos por cliente |
 | `PUT` | `/api/billing/orcamento/{id}/status?novoStatus={status}` | Atualiza o status |
-| `POST` | `/api/billing/orcamento/{id}/checkout` | Cria a preferência de pagamento (mock ou Mercado Pago) |
-| `POST` | `/api/billing/orcamento/{id}/simular-pagamento?aprovado={true\|false}` | Simula o retorno do provedor (somente `PAGAMENTO_PROVIDER=mock`) |
+| `POST` | `/api/billing/orcamento/{id}/checkout` | Cria a preferência de pagamento no Mercado Pago |
+| `POST` | `/api/billing/orcamento/{id}/simular-pagamento?aprovado={true\|false}` | Simulação do provedor (apenas desenvolvimento local) |
 | `POST` | `/webhook/mercadopago` | Recebe notificações do Mercado Pago |
 
 > No cluster, a API fica sob o prefixo `/billing` e o webhook sob `/webhook`.
@@ -55,7 +56,7 @@ curl -X PUT "http://localhost:8082/api/billing/orcamento/1/status?novoStatus=APR
 # Registrar pagamento
 curl -X PUT "http://localhost:8082/api/billing/orcamento/1/status?novoStatus=PAGO"
 
-# Checkout (mock)
+# Checkout
 curl -X POST "http://localhost:8082/api/billing/orcamento/1/checkout"
 
 # Simular pagamento aprovado / recusado
@@ -124,12 +125,12 @@ Tabela `orcamento`:
 
 ## Integração Mercado Pago
 
-O pagamento é acessado pela porta `PaymentGateway`, com duas implementações intercambiáveis por configuração:
+O pagamento é acessado pela porta `PaymentGateway`, com implementações intercambiáveis por configuração:
 
 | `PAGAMENTO_PROVIDER` | Situação |
 |---|---|
-| `mock` (padrão local/demo) | Preferência fictícia (`MOCK-PREF-{id}`) e simulação via `POST /orcamento/{id}/simular-pagamento?aprovado=` |
-| `mercadopago` (sandbox) | **Implementado** — `MercadoPagoPaymentGateway` cria a preferência no Checkout Pro, consulta o pagamento e valida a assinatura do webhook |
+| `mercadopago` | **Ativo no cluster** — `MercadoPagoPaymentGateway` cria a preferência no Checkout Pro, consulta o pagamento e valida a assinatura do webhook |
+| `mock` | Implementação de desenvolvimento local — preferência fictícia e simulação do retorno |
 
 ### Provider real (`mercadopago`)
 
@@ -159,7 +160,7 @@ O pagamento é acessado pela porta `PaymentGateway`, com duas implementações i
 | `MERCADOPAGO_NOTIFICATION_URL` | `http://localhost:8082/webhook/mercadopago` | URL de notificação |
 | `MERCADOPAGO_BACK_URL` | `http://localhost:8082/billing/` | Retorno após o checkout (https habilita `auto_return`) |
 | `MERCADOPAGO_BASE_URL` | `https://api.mercadopago.com` | Base da API |
-| `PAGAMENTO_PROVIDER` | `mock` | `mock` ou `mercadopago` |
+| `PAGAMENTO_PROVIDER` | `mercadopago` | Provider ativo no cluster (`mock` apenas para desenvolvimento local) |
 
 ## Como executar localmente
 
